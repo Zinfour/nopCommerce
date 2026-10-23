@@ -584,6 +584,9 @@ public partial class AdminMapperConfiguration : BaseMapperProfile
         CreateMap<Product, AssociatedProductModel>()
             .ForMember(model => model.ProductName, options => options.Ignore());
 
+        CreateMap<Product, ProductTagProductModel>()
+            .ForMember(model => model.IsTagged, options => options.Ignore());
+
         CreateMap<ProductAttributeCombination, ProductAttributeCombinationModel>()
             .ForMember(model => model.AttributesXml, options => options.Ignore())
             .ForMember(model => model.ProductAttributes, options => options.Ignore())
