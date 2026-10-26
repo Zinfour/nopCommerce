@@ -2761,6 +2761,90 @@ public partial class ProductController : BaseAdminController
         return Json(model);
     }
 
+    [HttpGet]
+    [CheckPermission(StandardPermission.Catalog.PRODUCT_TAGS_VIEW)]
+    public virtual async Task<IActionResult> BulkProductTags(int id)
+    {
+        // Prevent vendor accounts from seeing or editing other vendors' products.
+        if (await _workContext.GetCurrentVendorAsync() != null)
+        {
+            return Forbid();
+        }
+
+        var tag = await _productTagService.GetProductTagByIdAsync(id);
+        if (tag == null)
+        {
+            return NotFound();
+        }
+
+        var model = new BulkProductTagPageModel
+        {
+            ProductTagId = tag.Id,
+            ProductTagName = tag.Name,
+            CanEditTags = await _permissionService.AuthorizeAsync(
+                StandardPermission.Catalog.PRODUCT_TAGS_CREATE_EDIT_DELETE),
+            SearchModel = new BulkProductTagSearchModel
+            {
+                ProductTagId = tag.Id
+            }
+        };
+
+        model.SearchModel.SetGridPageSize();
+        return View(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.PRODUCT_TAGS_VIEW)]
+    public virtual async Task<IActionResult> BulkProductTagList(BulkProductTagSearchModel searchModel)
+    {
+        if (await _workContext.GetCurrentVendorAsync() != null)
+        {
+            return Forbid();
+        }
+
+        if (searchModel == null || searchModel.Length <= 0 || searchModel.Start < 0)
+        {
+            return BadRequest("Invalid search parameters.");
+        }
+
+        if (await _productTagService.GetProductTagByIdAsync(searchModel.ProductTagId) == null)
+        {
+            return NotFound();
+        }
+
+        var model = await _productModelFactory.PrepareBulkProductTagListModelAsync(searchModel);
+        return Json(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [CheckPermission(StandardPermission.Catalog.PRODUCT_TAGS_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> SaveBulkProductTags(
+        int productTagId,
+        int[] addProductIds,
+        int[] removeProductIds)
+    {
+        if (await _workContext.GetCurrentVendorAsync() != null)
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            var changedCount = await _productTagService.UpdateBulkProductTagAssignmentsAsync(
+                productTagId,
+                addProductIds,
+                removeProductIds);
+
+            return Json(new { success = true, updatedCount = changedCount });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+
     #endregion
 
     #region Purchased with order
