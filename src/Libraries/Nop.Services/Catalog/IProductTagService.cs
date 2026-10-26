@@ -1,4 +1,5 @@
-﻿using Nop.Core.Domain.Catalog;
+﻿using Nop.Core;
+using Nop.Core.Domain.Catalog;
 
 namespace Nop.Services.Catalog;
 
@@ -105,4 +106,38 @@ public partial interface IProductTagService
     /// <param name="productTags">Product tags</param>
     /// <returns>A task that represents the asynchronous operation</returns>
     Task UpdateProductTagsAsync(Product product, string[] productTags);
+
+
+    /// <summary>
+    /// Searches products for bulk assignment to a single product tag.
+    /// </summary>
+    /// <param name="productTagId">Selected product tag identifier.</param>
+    /// <param name="searchProductName">Optional product name filter.</param>
+    /// <param name="pageIndex">Zero-based page index.</param>
+    /// <param name="pageSize">Number of products per page.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains a paged list of products.
+    /// </returns>
+    Task<IPagedList<Product>> SearchProductsForBulkTagManagementAsync(
+        int productTagId,
+        string searchProductName,
+        int pageIndex,
+        int pageSize);
+
+    /// <summary>
+    /// Updates only the selected tag mappings, preserving other product tags.
+    /// </summary>
+    /// <param name="productTagId">Selected product tag identifier.</param>
+    /// <param name="addProductIds">Product identifiers to assign the tag to.</param>
+    /// <param name="removeProductIds">Product identifiers to remove the tag from.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains the number of tag assignments changed.
+    /// </returns>
+    Task<int> UpdateBulkProductTagAssignmentsAsync(
+        int productTagId,
+        int[] addProductIds,
+        int[] removeProductIds);
+
 }

@@ -99,8 +99,8 @@ public partial class ProductTagService : IProductTagService
     protected virtual async Task<ProductTag> GetProductTagByNameAsync(string name)
     {
         var query = from pt in _productTagRepository.Table
-            where pt.Name == name
-            select pt;
+                    where pt.Name == name
+                    select pt;
 
         var productTag = await query.FirstOrDefaultAsync();
         return productTag;
@@ -176,10 +176,10 @@ public partial class ProductTagService : IProductTagService
         return await _staticCacheManager.GetAsync(key, async () =>
         {
             var tagMapping = from ptm in _productProductTagMappingRepository.Table
-                join pt in _productTagRepository.Table on ptm.ProductTagId equals pt.Id
-                where ptm.ProductId == productId
-                orderby pt.Id
-                select pt;
+                             join pt in _productTagRepository.Table on ptm.ProductTagId equals pt.Id
+                             where ptm.ProductId == productId
+                             orderby pt.Id
+                             select pt;
 
             return await tagMapping.ToListAsync();
         });
@@ -293,13 +293,13 @@ public partial class ProductTagService : IProductTagService
             query = query.Where(pc => productsQuery.Any(p => pc.ProductId == p.Id));
 
             var pTagCount = from pt in _productTagRepository.Table
-                join ptm in query on pt.Id equals ptm.ProductTagId
-                group ptm by ptm.ProductTagId into ptmGrouped
-                select new
-                {
-                    ProductTagId = ptmGrouped.Key,
-                    ProductCount = ptmGrouped.Count()
-                };
+                            join ptm in query on pt.Id equals ptm.ProductTagId
+                            group ptm by ptm.ProductTagId into ptmGrouped
+                            select new
+                            {
+                                ProductTagId = ptmGrouped.Key,
+                                ProductCount = ptmGrouped.Count()
+                            };
 
             return await pTagCount.ToDictionaryAsync(item => item.ProductTagId, item => item.ProductCount);
         });
@@ -333,7 +333,7 @@ public partial class ProductTagService : IProductTagService
             if (!found)
                 productTagIdsToRemove.Add(existingProductTag.Id);
         }
-        
+
         await DeleteProductProductTagMappingAsync(product.Id, productTagIdsToRemove);
 
         foreach (var productTagName in productTags)
@@ -361,6 +361,135 @@ public partial class ProductTagService : IProductTagService
 
         //cache
         await _staticCacheManager.RemoveByPrefixAsync(NopEntityCacheDefaults<ProductTag>.Prefix);
+    }
+
+
+    /// <summary>
+    /// Searches products with the selected tag first, before paging.
+    /// </summary>
+    /// <param name="productTagId">Selected product tag identifier.</param>
+    /// <param name="searchProductName">Optional product name filter.</param>
+    /// <param name="pageIndex">Zero-based page index.</param>
+    /// <param name="pageSize">Number of products per page.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains a paged list of products with tagged products first.
+    /// </returns>
+    public virtual async Task<IPagedList<Product>> SearchProductsForBulkTagManagementAsync(
+    int productTagId,
+    string searchProductName,
+    int pageIndex,
+    int pageSize)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productTagId);
+        ArgumentOutOfRangeException.ThrowIfNegative(pageIndex);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
+
+        var products = _productRepository.Table.Where(product => !product.Deleted);
+
+        if (!string.IsNullOrWhiteSpace(searchProductName))
+        {
+            var keyword = searchProductName.Trim();
+            products = products.Where(product => product.Name.Contains(keyword));
+        }
+
+        var selectedTagMappings = _productProductTagMappingRepository.Table
+            .Where(mapping => mapping.ProductTagId == productTagId);
+
+        // Sorting takes place in the database BEFORE pagination.
+        return await products
+            .OrderByDescending(product => selectedTagMappings.Any(mapping => mapping.ProductId == product.Id))
+            .ThenBy(product => product.Name)
+            .ThenBy(product => product.Id)
+            .ToPagedListAsync(pageIndex, pageSize);
+    }
+
+
+    /// <summary>
+    /// Adds and removes mappings for a single tag, leaving all other tags intact.
+    /// </summary>
+    /// <param name="productTagId">Selected product tag identifier.</param>
+    /// <param name="addProductIds">Product identifiers to assign the tag to.</param>
+    /// <param name="removeProductIds">Product identifiers to remove the tag from.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains the number of tag mappings added or removed.
+    /// </returns>
+    public virtual async Task<int> UpdateBulkProductTagAssignmentsAsync(
+    int productTagId,
+    int[] addProductIds,
+    int[] removeProductIds)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productTagId);
+
+        var addIds = (addProductIds ?? []).ToHashSet();
+        var removeIds = (removeProductIds ?? []).ToHashSet();
+
+        if (addIds.Overlaps(removeIds))
+        {
+            throw new ArgumentException("A product cannot be both added and removed.");
+        }
+
+        var touchedIds = addIds.Concat(removeIds).ToArray();
+        if (touchedIds.Any(id => id <= 0))
+        {
+            throw new ArgumentException("Product identifiers must be positive.");
+        }
+
+        if (await GetProductTagByIdAsync(productTagId) == null)
+        {
+            throw new ArgumentException("The selected product tag does not exist.");
+        }
+
+        if (touchedIds.Length == 0)
+        {
+            return 0;
+        }
+
+        // Validate every product BEFORE any database change.
+        var validProductIds = await _productRepository.Table
+            .Where(product => touchedIds.Contains(product.Id) && !product.Deleted)
+            .Select(product => product.Id)
+            .ToListAsync();
+
+        if (validProductIds.Count != touchedIds.Length)
+            throw new ArgumentException("One or more products do not exist or have been deleted.");
+
+        var existingMappings = await _productProductTagMappingRepository.Table
+            .Where(mapping => mapping.ProductTagId == productTagId && touchedIds.Contains(mapping.ProductId))
+            .ToListAsync();
+
+        var alreadyTaggedIds = existingMappings
+            .Select(mapping => mapping.ProductId)
+            .ToHashSet();
+
+        var mappingsToRemove = existingMappings
+            .Where(mapping => removeIds.Contains(mapping.ProductId))
+            .ToList();
+
+        var idsToAdd = addIds.Except(alreadyTaggedIds).ToArray();
+
+        // Delete only mappings for this selected tag.
+        if (mappingsToRemove.Count > 0)
+            await _productProductTagMappingRepository.DeleteAsync(mappingsToRemove);
+
+        foreach (var productId in idsToAdd)
+        {
+            await _productProductTagMappingRepository.InsertAsync(new ProductProductTagMapping
+            {
+                ProductId = productId,
+                ProductTagId = productTagId
+            });
+        }
+
+        var changedCount = mappingsToRemove.Count + idsToAdd.Length;
+        if (changedCount > 0)
+        {
+            // Also clears product-by-tag and tag-count cached values.
+            await _staticCacheManager.RemoveByPrefixAsync(NopEntityCacheDefaults<ProductTag>.Prefix);
+        }
+
+        return changedCount;
     }
 
     #endregion
