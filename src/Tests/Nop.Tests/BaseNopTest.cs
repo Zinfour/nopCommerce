@@ -491,6 +491,7 @@ public partial class BaseNopTest
         services.AddTransient<IStoreMappingSupportedModelFactory, StoreMappingSupportedModelFactory>();
 
         //admin factories
+        services.AddTransient<IAddressModelFactory, AddressModelFactory>();
         services.AddTransient<IAclSupportedModelFactory, AclSupportedModelFactory>();
         services.AddTransient<IBaseAdminModelFactory, BaseAdminModelFactory>();
         services.AddTransient<IActivityLogModelFactory, ActivityLogModelFactory>();
