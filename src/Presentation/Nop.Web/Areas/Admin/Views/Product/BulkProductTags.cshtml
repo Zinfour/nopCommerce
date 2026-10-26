@@ -22,6 +22,11 @@ hideSearchBlockAttributeName);
             <h1 class="float-left">
                 @* TODO: use Localization, ie. T(..) *@
                 @("Bulk edit product tags: " + Model.ProductTagName)
+                <small>
+                    <i class="fas fa-arrow-circle-left"></i>
+                    @* TODO: use Localization, ie. T(..) *@
+                    <a asp-action="ProductTags">back to product tags</a>
+                </small>
             </h1>
             @* TODO: add save button. *@
         </div>
