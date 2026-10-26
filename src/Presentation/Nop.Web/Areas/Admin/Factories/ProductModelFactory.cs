@@ -2602,5 +2602,47 @@ public partial class ProductModelFactory : IProductModelFactory
         return model;
     }
 
+    /// <summary>
+    /// Prepares the product list and assignment status for a selected tag.
+    /// </summary>
+    /// <param name="searchModel">Search parameters for bulk product tag management.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains a paged list of products with their tag assignment status.
+    /// </returns>
+    public virtual async Task<BulkProductTagListModel> PrepareBulkProductTagListModelAsync(BulkProductTagSearchModel searchModel)
+    {
+        ArgumentNullException.ThrowIfNull(searchModel);
+
+        var products = await _productTagService.SearchProductsForBulkTagManagementAsync(
+            searchModel.ProductTagId,
+            searchModel.SearchProductName,
+            searchModel.Page - 1,
+            searchModel.PageSize);
+
+        return await new BulkProductTagListModel().PrepareToGridAsync(searchModel, products, () =>
+        {
+            return products.SelectAwait(async product =>
+            {
+                var picture = (await _pictureService.GetPicturesByProductIdAsync(product.Id, 1))
+                    .FirstOrDefault();
+                var (pictureUrl, _) = await _pictureService.GetPictureUrlAsync(picture, 75);
+
+                var productTags = await _productTagService
+                    .GetAllProductTagsByProductIdAsync(product.Id);
+
+                return new ProductTagProductModel
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Sku = product.Sku,
+                    PictureThumbnailUrl = pictureUrl,
+                    Published = product.Published,
+                    IsTagged = productTags.Any(tag => tag.Id == searchModel.ProductTagId)
+                };
+            });
+        });
+    }
+
     #endregion
 }

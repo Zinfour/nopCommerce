@@ -453,7 +453,9 @@ public partial class ProductTagService : IProductTagService
             .ToListAsync();
 
         if (validProductIds.Count != touchedIds.Length)
+        {
             throw new ArgumentException("One or more products do not exist or have been deleted.");
+        }
 
         var existingMappings = await _productProductTagMappingRepository.Table
             .Where(mapping => mapping.ProductTagId == productTagId && touchedIds.Contains(mapping.ProductId))
@@ -471,7 +473,9 @@ public partial class ProductTagService : IProductTagService
 
         // Delete only mappings for this selected tag.
         if (mappingsToRemove.Count > 0)
+        {
             await _productProductTagMappingRepository.DeleteAsync(mappingsToRemove);
+        }
 
         foreach (var productId in idsToAdd)
         {

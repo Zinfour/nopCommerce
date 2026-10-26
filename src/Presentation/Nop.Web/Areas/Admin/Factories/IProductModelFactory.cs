@@ -397,4 +397,17 @@ public partial interface IProductModelFactory
     /// </returns>
     Task<ProductAttributeCombinationModel> PrepareProductAttributeCombinationModelAsync(ProductAttributeCombinationModel model,
         Product product, ProductAttributeCombination productAttributeCombination, bool excludeProperties = false);
+
+
+    /// <summary>
+    /// Prepares the product list for bulk product tag management.
+    /// </summary>
+    /// <param name="searchModel">Search parameters for bulk product tag management.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// The task result contains a paged list of products with their tag assignment status.
+    /// </returns>
+    Task<BulkProductTagListModel> PrepareBulkProductTagListModelAsync(
+        BulkProductTagSearchModel searchModel);
+
 }
