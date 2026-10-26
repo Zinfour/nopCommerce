@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Newtonsoft.Json.Linq;
@@ -50,12 +50,12 @@ public class ProductControllerTests : BaseNopTest
         var result = await _controller.BulkProductTags(tag.Id);
 
         var view = result.Should().BeOfType<ViewResult>().Which;
-        var model = view.Model.Should().BeOfType<BulkProductTagPageModel>().Which;
+        var model = view.Model.Should().BeOfType<BulkProductTagSearchModel>().Which;
+
         model.ProductTagId.Should().Be(tag.Id);
         model.ProductTagName.Should().Be(tag.Name);
         model.CanEditTags.Should().BeTrue();
-        model.SearchModel.ProductTagId.Should().Be(tag.Id);
-        model.SearchModel.PageSize.Should().BeGreaterThan(0);
+        model.PageSize.Should().BeGreaterThan(0);
     }
 
     [Test]
