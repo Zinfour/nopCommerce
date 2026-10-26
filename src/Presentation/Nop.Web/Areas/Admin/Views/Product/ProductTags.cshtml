@@ -95,7 +95,8 @@
                                     new ColumnProperty(nameof(ProductTagModel.ProductCount))
                                     {
                                         Title = T("Admin.Catalog.ProductTags.Fields.ProductCount").Text,
-                                        ClassName =  NopColumnClassDefaults.CenterAll
+                                        ClassName =  NopColumnClassDefaults.CenterAll,
+                                        Render = new RenderCustom("renderProductCountLink")
                                     },
                                     new ColumnProperty(nameof(ProductTagModel.Id))
                                     {
@@ -135,6 +136,9 @@
                                 return false;
                             });
                         });
+                        function renderProductCountLink(data, type, row, meta) {
+                            return '<a href="@Url.Content("~/Admin/Product/BulkProductTags")?id=' + row.Id + '">' + data + '</a>';
+                        }
                             </script>
                         </div>
                     </div>
