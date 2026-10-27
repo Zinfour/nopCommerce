@@ -18,6 +18,7 @@ hideSearchBlockAttributeName);
 @if (Model.LicenseCheckModel.BlockPages != true)
 {
     <form asp-controller="Product" asp-action="List" method="post">
+        @Html.HiddenFor(model => model.ProductTagId)
         <div class="content-header clearfix">
             <h1 class="float-left">
                 @* TODO: use Localization, ie. T(..) *@
@@ -171,30 +172,30 @@ hideSearchBlockAttributeName);
                                 @await Html.PartialAsync("Table", new DataTablesModel
                                 {
                                     Name = "products-grid",
-                                    UrlRead = new DataUrl("ProductList", "Product", null),
+                                    UrlRead = new DataUrl("BulkProductTagList", "Product", null),
                                     SearchButtonId = "search-products",
                                     Length = Model.PageSize,
                                     LengthMenu = Model.AvailablePageSizes,
                                     Filters = new List<FilterParameter>
-                                  {
-                                      new FilterParameter(nameof(Model.SearchProductName)),
-                                      new FilterParameter(nameof(Model.SearchCategoryId)),
-                                      new FilterParameter(nameof(Model.SearchIncludeSubCategories), typeof(bool)),
-                                      new FilterParameter(nameof(Model.SearchManufacturerId)),
-                                      new FilterParameter(nameof(Model.SearchStoreId)),
-                                      new FilterParameter(nameof(Model.SearchWarehouseId)),
-                                      new FilterParameter(nameof(Model.SearchVendorId)),
-                                      new FilterParameter(nameof(Model.SearchProductTypeId)),
-                                      new FilterParameter(nameof(Model.SearchPublishedId))
-                                  },
+                                    {
+                                        new FilterParameter(nameof(Model.ProductTagId)),
+                                        new FilterParameter(nameof(Model.SearchProductName)),
+                                        new FilterParameter(nameof(Model.SearchCategoryId)),
+                                        new FilterParameter(nameof(Model.SearchIncludeSubCategories), typeof(bool)),
+                                        new FilterParameter(nameof(Model.SearchManufacturerId)),
+                                        new FilterParameter(nameof(Model.SearchStoreId)),
+                                        new FilterParameter(nameof(Model.SearchWarehouseId)),
+                                        new FilterParameter(nameof(Model.SearchVendorId)),
+                                        new FilterParameter(nameof(Model.SearchProductTypeId)),
+                                        new FilterParameter(nameof(Model.SearchPublishedId))
+                                    },
                                     ColumnCollection = new List<ColumnProperty>
                                   {
                                       new ColumnProperty(nameof(ProductModel.Id))
                                       {
-                                          IsMasterCheckBox = true,
-                                          Render = new RenderCheckBox("checkbox_products"),
-                                          ClassName = NopColumnClassDefaults.CenterAll,
-                                          Width = "50"
+                                           Render = new RenderCustom("renderBulkTagCheckbox"),
+                                           ClassName = NopColumnClassDefaults.CenterAll,
+                                           Width = "50"
                                       },
                                       new ColumnProperty(nameof(ProductModel.PictureThumbnailUrl))
                                       {
@@ -233,6 +234,19 @@ hideSearchBlockAttributeName);
                                       } *@
                                   }
                                 })
+                                <script>
+                                    function renderBulkTagCheckbox(data, type, row) {
+                                        if (type !== 'display')
+                                            return data;
+
+                                        const checked = row.IsTagged ? 'checked' : '';
+
+                                        return `<input type="checkbox"
+                                               class="bulk-tag-checkbox"
+                                               data-product-id="${data}"
+                                               ${checked} />`;
+                                    }
+                            </script>
 
                                 <script>
                                     $(function () {
