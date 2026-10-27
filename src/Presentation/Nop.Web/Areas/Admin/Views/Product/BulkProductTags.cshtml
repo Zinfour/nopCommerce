@@ -29,7 +29,12 @@ hideSearchBlockAttributeName);
                     <a asp-action="ProductTags">back to product tags</a>
                 </small>
             </h1>
-            @* TODO: add save button. *@
+            <div class="float-right">
+                <button type="button" id="save-bulk-tags" class="btn btn-primary">
+                    <i class="far fa-floppy-disk"></i>
+                    @T("Admin.Common.Save")
+                </button>
+            </div>
         </div>
 
         <section class="content">
@@ -176,6 +181,7 @@ hideSearchBlockAttributeName);
                                     SearchButtonId = "search-products",
                                     Length = Model.PageSize,
                                     LengthMenu = Model.AvailablePageSizes,
+                                    DrawCallback = "updateBulkTagMasterCheckbox",
                                     Filters = new List<FilterParameter>
                                     {
                                         new FilterParameter(nameof(Model.ProductTagId)),
@@ -193,6 +199,7 @@ hideSearchBlockAttributeName);
                                   {
                                       new ColumnProperty(nameof(ProductModel.Id))
                                       {
+                                           IsMasterCheckBox = true,
                                            Render = new RenderCustom("renderBulkTagCheckbox"),
                                            ClassName = NopColumnClassDefaults.CenterAll,
                                            Width = "50"
@@ -234,48 +241,6 @@ hideSearchBlockAttributeName);
                                       } *@
                                   }
                                 })
-                                <script>
-                                    function renderBulkTagCheckbox(data, type, row) {
-                                        if (type !== 'display')
-                                            return data;
-
-                                        const checked = row.IsTagged ? 'checked' : '';
-
-                                        return `<input type="checkbox"
-                                               class="bulk-tag-checkbox"
-                                               data-product-id="${data}"
-                                               ${checked} />`;
-                                    }
-                            </script>
-
-                                <script>
-                                    $(function () {
-                                        $('#delete-selected-action-confirmation-submit-button').on('click', function () {
-                                            var postData = {
-                                                selectedIds: selectedIds
-                                            };
-                                            addAntiForgeryToken(postData);
-                                            $.ajax({
-                                                cache: false,
-                                                type: "POST",
-                                                url: "@(Url.Action("DeleteSelected", "Product"))",
-                                                data: postData,
-                                                error: function (jqXHR, textStatus, errorThrown) {
-                                                    showAlert('deleteSelectedFailed', errorThrown);
-                                                },
-                                                complete: function (jqXHR, textStatus) {
-                                                    if (jqXHR.status === 204) {
-                                                        showAlert('nothingSelectedAlert', '@T("Admin.Common.Alert.NothingSelected")');
-                                                        return;
-                                                    }
-                                                    updateTable('#products-grid');
-                                                }
-                                            });
-                                            $('#delete-selected-action-confirmation').modal('toggle');
-                                            return false;
-                                        });
-                                    });
-                                </script>
                             </div>
                         </div>
                     </div>
@@ -326,6 +291,66 @@ hideSearchBlockAttributeName);
             });
         }
     });
+
+    function updateBulkTagMasterCheckbox() {
+        updateMasterCheckbox($('#products-grid').parents('.dt-scroll').first());
+    }
+
+    let pendingChanges = {};
+
+    function renderBulkTagCheckbox(data, type, row) {
+        if (type !== 'display')
+            return data;
+
+        const checked = pendingChanges[row.Id] ?? row.IsTagged;
+        return `<input type="checkbox" class="checkboxGroups" value="${row.Id}" ${checked ? 'checked' : ''} />`;
+    }
+
+    function snapshotBulkTagChanges() {
+        $('#products-grid').DataTable().rows().every(function () {
+            const row = this.data();
+            const checked = this.node().querySelector('input.checkboxGroups').checked;
+
+            if (checked === row.IsTagged)
+                delete pendingChanges[row.Id];
+            else
+                pendingChanges[row.Id] = checked;
+        });
+    }
+
+    $(function () {
+        $('#products-grid').on('preXhr.dt', snapshotBulkTagChanges);
+
+        $('#save-bulk-tags').on('click', function () {
+            snapshotBulkTagChanges();
+
+            const ids = Object.keys(pendingChanges);
+            if (!ids.length)
+                return false;
+
+            const postData = {
+                productTagId: @Model.ProductTagId,
+                addProductIds: ids.filter(id => pendingChanges[id]),
+                removeProductIds: ids.filter(id => !pendingChanges[id])
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: 'POST',
+                url: '@Url.Action("SaveBulkProductTags", "Product")',
+                data: postData,
+                traditional: true,
+                error: (jqXHR, textStatus, errorThrown) =>
+                    showAlert('saveBulkTagsFailed', jqXHR.responseText || errorThrown),
+                success: () => {
+                    updateTable('#products-grid');
+                    pendingChanges = {};
+                }
+            });
+            return false;
+        });
+    });
 </script>
 <div id="license-window" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -334,3 +359,4 @@ hideSearchBlockAttributeName);
         </div>
     </div>
 </div>
+<nop-alert asp-alert-id="saveBulkTagsFailed" />
