@@ -289,10 +289,16 @@ Html.Raw("style=\"display:none\"") : null)>
                 success: (response) => {
                     if (response.success) {
                         displayBarNotification(
-                            @Json.Serialize(T("Admin.Catalog.ProductTags.Updated").Text),
-                            0,
-                            5000
-                        );
+                        @Json.Serialize(T("Admin.Catalog.ProductTags.Updated").Text),
+                        0,
+                        0
+                    );
+
+                    const notification = $('#admin-notifications .alert').last();
+
+                    setTimeout(() => {
+                        notification.fadeOut('slow', () => notification.remove());
+                    }, 5000);
 
                         pendingChanges = {};
                         updateTable('#products-grid');
