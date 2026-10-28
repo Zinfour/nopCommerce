@@ -273,14 +273,19 @@ Html.Raw("style=\"display:none\"") : null)>
     }
 
     function snapshotBulkTagChanges() {
-        $('#products-grid').DataTable().rows().every(function () {
-            const row = this.data();
-            const checked = this.node().querySelector('input.checkboxGroups').checked;
+        const table = $('#products-grid').DataTable();
 
-            if (checked === row.IsTagged)
+        $('#products-grid tbody input.checkboxGroups').each(function () {
+            const row = table.row($(this).closest('tr')).data();
+
+            if (!row)
+                return;
+
+            if (this.checked === row.IsTagged) {
                 delete pendingChanges[row.Id];
-            else
-                pendingChanges[row.Id] = checked;
+            } else {
+                pendingChanges[row.Id] = this.checked;
+            }
         });
     }
 
@@ -307,12 +312,26 @@ Html.Raw("style=\"display:none\"") : null)>
                 url: '@Url.Action("SaveBulkProductTags", "Product")',
                 data: postData,
                 traditional: true,
-                error: (jqXHR, textStatus, errorThrown) =>
-                    showAlert('saveBulkTagsFailed', jqXHR.responseText || errorThrown),
-                success: () => {
-                    updateTable('#products-grid');
-                    pendingChanges = {};
+                success: (response) => {
+                    if (response.success) {
+                        displayBarNotification(
+                            @Json.Serialize(T("Admin.Catalog.ProductTags.Updated").Text),
+                            0,
+                            5000
+                        );
+
+                        pendingChanges = {};
+                        updateTable('#products-grid');
+                    }
+                },
+                error: () => {
+                    displayBarNotification(
+                        @Json.Serialize(T("Common.Error").Text),
+                        1,
+                        5000
+                    );
                 }
+
             });
             return false;
         });
