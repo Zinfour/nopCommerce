@@ -2777,13 +2777,8 @@ public partial class ProductController : BaseAdminController
             return NotFound();
         }
 
-        var model = new BulkProductTagSearchModel
-        {
-            ProductTagId = tag.Id,
-            ProductTagName = tag.Name,
-            CanEditTags = await _permissionService.AuthorizeAsync(
-                StandardPermission.Catalog.PRODUCT_TAGS_CREATE_EDIT_DELETE),
-        };
+        var permission = await _permissionService.AuthorizeAsync(StandardPermission.Catalog.PRODUCT_TAGS_CREATE_EDIT_DELETE);
+        var model = await _productModelFactory.PrepareBulkProductTagSearchModelAsync(new BulkProductTagSearchModel(), tag, permission);
 
         model.SetGridPageSize();
         return View(model);

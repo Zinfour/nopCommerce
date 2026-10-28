@@ -410,4 +410,16 @@ public partial interface IProductModelFactory
     Task<BulkProductTagListModel> PrepareBulkProductTagListModelAsync(
         BulkProductTagSearchModel searchModel);
 
+    /// <summary>
+    /// Prepare bulk product tag search model.
+    /// </summary>
+    /// <param name="searchModel">Bulk product tag search model</param>
+    /// <param name="tag">Product tag</param>
+    /// <param name="permission">Whether tags can be edited</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the bulk product tag search model
+    /// </returns>
+    Task<BulkProductTagSearchModel> PrepareBulkProductTagSearchModelAsync(
+        BulkProductTagSearchModel searchModel, ProductTag tag, bool permission);
 }

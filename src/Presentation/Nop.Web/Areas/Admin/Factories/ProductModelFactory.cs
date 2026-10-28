@@ -2644,5 +2644,19 @@ public partial class ProductModelFactory : IProductModelFactory
         });
     }
 
+    public virtual async Task<BulkProductTagSearchModel> PrepareBulkProductTagSearchModelAsync(
+        BulkProductTagSearchModel searchModel, ProductTag tag, bool permission)
+    {
+        ArgumentNullException.ThrowIfNull(searchModel);
+
+        await PrepareProductSearchModelAsync(searchModel);
+
+        searchModel.ProductTagId = tag.Id;
+        searchModel.ProductTagName = tag.Name;
+        searchModel.CanEditTags = permission;
+
+        return searchModel;
+    }
+
     #endregion
 }
