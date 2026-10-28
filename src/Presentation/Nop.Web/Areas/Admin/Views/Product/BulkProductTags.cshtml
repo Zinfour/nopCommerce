@@ -28,6 +28,9 @@ hideSearchBlockAttributeName);
             </small>
         </h1>
         <div class="float-right">
+            <button type="button" id="discard-bulk-tags" class="btn btn-danger">
+                @T("Admin.Common.Cancel")
+            </button>
             <button type="button" id="save-bulk-tags" class="btn btn-primary">
                 <i class="far fa-floppy-disk"></i>
                 @T("Admin.Common.Save")
@@ -264,6 +267,10 @@ Html.Raw("style=\"display:none\"") : null)>
     }
 
     $(function () {
+        $('#discard-bulk-tags').on('click', function () {
+            window.location.reload();
+        });
+
         $('#products-grid').on('preXhr.dt', snapshotBulkTagChanges);
 
         $('#save-bulk-tags').on('click', function () {
