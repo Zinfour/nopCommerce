@@ -1,4 +1,4 @@
-using Nop.Web.Framework.Models;
+﻿using Nop.Web.Framework.Models;
 
 namespace Nop.Web.Areas.Admin.Models.Catalog;
 
@@ -14,6 +14,10 @@ public partial record ProductTagProductModel : BaseNopEntityModel
     public string PictureThumbnailUrl { get; set; }
 
     public bool Published { get; set; }
+
+    public string FormattedPrice { get; set; }
+    
+    public string StockQuantityStr { get; set; }
 
     public bool IsTagged { get; set; }
 }

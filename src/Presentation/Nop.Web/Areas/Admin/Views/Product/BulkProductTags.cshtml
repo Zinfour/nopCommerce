@@ -182,42 +182,42 @@ Html.Raw("style=\"display:none\"") : null)>
                                 },
                                 ColumnCollection = new List<ColumnProperty>
                                 {
-                                    new ColumnProperty(nameof(ProductModel.Id))
+                                    new ColumnProperty(nameof(ProductTagProductModel.Id))
                                     {
                                         IsMasterCheckBox = true,
                                         Render = new RenderCustom("renderBulkTagCheckbox"),
                                         ClassName = NopColumnClassDefaults.CenterAll,
                                         Width = "50"
                                     },
-                                    new ColumnProperty(nameof(ProductModel.PictureThumbnailUrl))
+                                    new ColumnProperty(nameof(ProductTagProductModel.PictureThumbnailUrl))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.PictureThumbnailUrl").Text,
                                         Render = new RenderPicture(width: 100)
                                     },
-                                    new ColumnProperty(nameof(ProductModel.Name))
+                                    new ColumnProperty(nameof(ProductTagProductModel.Name))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.Name").Text
                                     },
-                                    new ColumnProperty(nameof(ProductModel.Sku))
+                                    new ColumnProperty(nameof(ProductTagProductModel.Sku))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.Sku").Text
                                     },
-                                    new ColumnProperty(nameof(ProductModel.FormattedPrice))
+                                    new ColumnProperty(nameof(ProductTagProductModel.FormattedPrice))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.Price").Text
                                     },
-                                    new ColumnProperty(nameof(ProductModel.StockQuantityStr))
+                                    new ColumnProperty(nameof(ProductTagProductModel.StockQuantityStr))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.StockQuantity").Text
                                     },
-                                    new ColumnProperty(nameof(ProductModel.Published))
+                                    new ColumnProperty(nameof(ProductTagProductModel.Published))
                                     {
                                         Title = T("Admin.Catalog.Products.Fields.Published").Text,
                                         Width = "100",
                                         ClassName = NopColumnClassDefaults.CenterAll,
                                         Render = new RenderBoolean()
                                     },
-                                    @* new ColumnProperty(nameof(ProductModel.Id))
+                                    @* new ColumnProperty(nameof(ProductTagProductModel.Id))
                                     {
                                         Title = T("Admin.Common.Edit").Text,
                                         Width = "100",

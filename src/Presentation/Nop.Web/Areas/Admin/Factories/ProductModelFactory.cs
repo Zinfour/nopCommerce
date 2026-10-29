@@ -2641,22 +2641,23 @@ public partial class ProductModelFactory : IProductModelFactory
         {
             return products.SelectAwait(async product =>
             {
-                var picture = (await _pictureService.GetPicturesByProductIdAsync(product.Id, 1))
-                    .FirstOrDefault();
-                var (pictureUrl, _) = await _pictureService.GetPictureUrlAsync(picture, 75);
+                //fill in model values from the entity
+                var productModel = product.ToModel<ProductTagProductModel>();
+
+                //fill in additional values (not existing in the entity)
+                productModel.FormattedPrice = product.ProductType == ProductType.GroupedProduct ? null : await _priceFormatter.FormatPriceAsync(product.Price);
+
+                var defaultProductPicture = (await _pictureService.GetPicturesByProductIdAsync(product.Id, 1)).FirstOrDefault();
+                (productModel.PictureThumbnailUrl, _) = await _pictureService.GetPictureUrlAsync(defaultProductPicture, 75);
+
+                if (product.ProductType == ProductType.SimpleProduct && product.ManageInventoryMethod == ManageInventoryMethod.ManageStock)
+                    productModel.StockQuantityStr = (await _productService.GetTotalStockQuantityAsync(product)).ToString();
 
                 var productTags = await _productTagService
                     .GetAllProductTagsByProductIdAsync(product.Id);
+                productModel.IsTagged = productTags.Any(tag => tag.Id == searchModel.ProductTagId);
 
-                return new ProductTagProductModel
-                {
-                    Id = product.Id,
-                    Name = product.Name,
-                    Sku = product.Sku,
-                    PictureThumbnailUrl = pictureUrl,
-                    Published = product.Published,
-                    IsTagged = productTags.Any(tag => tag.Id == searchModel.ProductTagId)
-                };
+                return productModel;
             });
         });
     }
