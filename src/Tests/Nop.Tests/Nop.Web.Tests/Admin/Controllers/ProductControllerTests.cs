@@ -47,15 +47,23 @@ public class ProductControllerTests : BaseNopTest
                 StandardPermission.Catalog.PRODUCT_TAGS_CREATE_EDIT_DELETE))
             .ReturnsAsync(true);
 
+        var expected = new BulkProductTagSearchModel
+        {
+            ProductTagId = tag.Id,
+            ProductTagName = tag.Name,
+            CanEditTags = true
+        };
+        _productModelFactory
+            .Setup(x => x.PrepareBulkProductTagSearchModelAsync(
+                It.IsAny<BulkProductTagSearchModel>(), tag, true))
+            .ReturnsAsync(expected);
+
         var result = await _controller.BulkProductTags(tag.Id);
 
         var view = result.Should().BeOfType<ViewResult>().Which;
-        var model = view.Model.Should().BeOfType<BulkProductTagSearchModel>().Which;
-
-        model.ProductTagId.Should().Be(tag.Id);
-        model.ProductTagName.Should().Be(tag.Name);
-        model.CanEditTags.Should().BeTrue();
-        model.PageSize.Should().BeGreaterThan(0);
+        view.Model.Should().BeSameAs(expected);
+        _productModelFactory.Verify(x => x.PrepareBulkProductTagSearchModelAsync(
+            It.IsAny<BulkProductTagSearchModel>(), tag, true), Times.Once);
     }
 
     [Test]

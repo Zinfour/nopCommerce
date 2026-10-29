@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Nop.Core.Domain.Catalog;
 using Nop.Data;
 using Nop.Services.Catalog;
@@ -83,55 +83,6 @@ public class ProductTagServiceTests : ServiceTest
         }
 
         _products.Clear();
-    }
-
-    [Test]
-    public async Task SearchProducts_TaggedProductsFirst()
-    {
-        await AddMappingAsync(_tag.Id, _products[3].Id);
-
-        var result = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            _tag.Id, _namePrefix, 0, 10);
-
-        result.Select(product => product.Id).Should().Equal(
-            _products[3].Id, _products[0].Id, _products[1].Id, _products[2].Id);
-    }
-
-    [Test]
-    public async Task SearchProducts_ExcludesDeletedProducts()
-    {
-        _products[2].Deleted = true;
-        await _productRepository.UpdateAsync(_products[2]);
-
-        var result = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            _tag.Id, _namePrefix, 0, 10);
-
-        result.Should().HaveCount(3);
-        result.Select(product => product.Id).Should().NotContain(_products[2].Id);
-    }
-
-    [Test]
-    public async Task SearchProducts_FiltersByName()
-    {
-        var result = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            _tag.Id, $" {_namePrefix}_B ", 0, 10);
-
-        result.Select(product => product.Id).Should().Equal(_products[1].Id);
-    }
-
-    [Test]
-    public async Task SearchProducts_PaginationWorks()
-    {
-        var firstPage = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            _tag.Id, _namePrefix, 0, 2);
-
-        var secondPage = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            _tag.Id, _namePrefix, 1, 2);
-
-        firstPage.Select(product => product.Id).Should().Equal(
-            _products[0].Id, _products[1].Id);
-        secondPage.Select(product => product.Id).Should().Equal(
-            _products[2].Id, _products[3].Id);
     }
 
     [Test]

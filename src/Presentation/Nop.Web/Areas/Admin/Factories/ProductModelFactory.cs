@@ -2614,11 +2614,28 @@ public partial class ProductModelFactory : IProductModelFactory
     {
         ArgumentNullException.ThrowIfNull(searchModel);
 
-        var products = await _productTagService.SearchProductsForBulkTagManagementAsync(
-            searchModel.ProductTagId,
-            searchModel.SearchProductName,
-            searchModel.Page - 1,
-            searchModel.PageSize);
+        var overridePublished = searchModel.SearchPublishedId == 0 ? null : (bool?)(searchModel.SearchPublishedId == 1);
+        var currentVendor = await _workContext.GetCurrentVendorAsync();
+        if (currentVendor != null)
+            searchModel.SearchVendorId = currentVendor.Id;
+        var categoryIds = new List<int> { searchModel.SearchCategoryId };
+        if (searchModel.SearchIncludeSubCategories && searchModel.SearchCategoryId > 0)
+        {
+            var childCategoryIds = await _categoryService.GetChildCategoryIdsAsync(parentCategoryId: searchModel.SearchCategoryId, showHidden: true);
+            categoryIds.AddRange(childCategoryIds);
+        }
+
+        var products = await _productService.SearchProductsAsync(showHidden: true,
+            categoryIds: categoryIds,
+            manufacturerIds: new List<int> { searchModel.SearchManufacturerId },
+            storeId: searchModel.SearchStoreId,
+            vendorId: searchModel.SearchVendorId,
+            warehouseId: searchModel.SearchWarehouseId,
+            productType: searchModel.SearchProductTypeId > 0 ? (ProductType?)searchModel.SearchProductTypeId : null,
+            keywords: searchModel.SearchProductName,
+            pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize,
+            overridePublished: overridePublished,
+            orderByTagId: searchModel.ProductTagId);
 
         return await new BulkProductTagListModel().PrepareToGridAsync(searchModel, products, () =>
         {

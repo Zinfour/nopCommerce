@@ -107,24 +107,6 @@ public partial interface IProductTagService
     /// <returns>A task that represents the asynchronous operation</returns>
     Task UpdateProductTagsAsync(Product product, string[] productTags);
 
-
-    /// <summary>
-    /// Searches products for bulk assignment to a single product tag.
-    /// </summary>
-    /// <param name="productTagId">Selected product tag identifier.</param>
-    /// <param name="searchProductName">Optional product name filter.</param>
-    /// <param name="pageIndex">Zero-based page index.</param>
-    /// <param name="pageSize">Number of products per page.</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation.
-    /// The task result contains a paged list of products.
-    /// </returns>
-    Task<IPagedList<Product>> SearchProductsForBulkTagManagementAsync(
-        int productTagId,
-        string searchProductName,
-        int pageIndex,
-        int pageSize);
-
     /// <summary>
     /// Updates only the selected tag mappings, preserving other product tags.
     /// </summary>

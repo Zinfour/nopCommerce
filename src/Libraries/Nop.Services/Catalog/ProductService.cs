@@ -842,7 +842,8 @@ public partial class ProductService : IProductService
         IList<SpecificationAttributeOption> filteredSpecOptions = null,
         ProductSortingEnum orderBy = ProductSortingEnum.Position,
         bool showHidden = false,
-        bool? overridePublished = null)
+        bool? overridePublished = null,
+        int? orderByTagId = null)
     {
         //some databases don't support int.MaxValue
         if (pageSize == int.MaxValue)
@@ -908,7 +909,7 @@ public partial class ProductService : IProductService
 
                     var sortedResult = await productsQuery
                         .Join(results, product => product.Id, id => id, (product, id) => product)
-                        .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id, results)
+                        .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id, results, orderByTagId, _productTagMappingRepository)
                         .ToListAsync();
 
                     return new PagedList<Product>(sortedResult, pageIndex, pageSize, totalItems);
@@ -918,7 +919,7 @@ public partial class ProductService : IProductService
                     if (!_artificialIntelligenceSettings.UseStandardSearchWhenNoResults)
                     {
                         return await productsQuery
-                            .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id)
+                            .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id, null, orderByTagId, _productTagMappingRepository)
                             .ToPagedListAsync(pageIndex, pageSize);
                     }
                 }
@@ -1173,7 +1174,7 @@ public partial class ProductService : IProductService
         }
 
         return await productsQuery
-            .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id, providerResults)
+            .OrderBy(orderBy, _localizedPropertyRepository, languageId > 0 ? languageId : (await _workContext.GetWorkingLanguageAsync()).Id, providerResults, orderByTagId, _productTagMappingRepository)
             .ToPagedListAsync(pageIndex, pageSize);
     }
 

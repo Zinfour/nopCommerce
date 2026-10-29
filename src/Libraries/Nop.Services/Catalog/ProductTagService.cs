@@ -365,47 +365,6 @@ public partial class ProductTagService : IProductTagService
 
 
     /// <summary>
-    /// Searches products with the selected tag first, before paging.
-    /// </summary>
-    /// <param name="productTagId">Selected product tag identifier.</param>
-    /// <param name="searchProductName">Optional product name filter.</param>
-    /// <param name="pageIndex">Zero-based page index.</param>
-    /// <param name="pageSize">Number of products per page.</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation.
-    /// The task result contains a paged list of products with tagged products first.
-    /// </returns>
-    public virtual async Task<IPagedList<Product>> SearchProductsForBulkTagManagementAsync(
-    int productTagId,
-    string searchProductName,
-    int pageIndex,
-    int pageSize)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productTagId);
-        ArgumentOutOfRangeException.ThrowIfNegative(pageIndex);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
-
-        var products = _productRepository.Table.Where(product => !product.Deleted);
-
-        if (!string.IsNullOrWhiteSpace(searchProductName))
-        {
-            var keyword = searchProductName.Trim();
-            products = products.Where(product => product.Name.Contains(keyword));
-        }
-
-        var selectedTagMappings = _productProductTagMappingRepository.Table
-            .Where(mapping => mapping.ProductTagId == productTagId);
-
-        // Sorting takes place in the database BEFORE pagination.
-        return await products
-            .OrderByDescending(product => selectedTagMappings.Any(mapping => mapping.ProductId == product.Id))
-            .ThenBy(product => product.Name)
-            .ThenBy(product => product.Id)
-            .ToPagedListAsync(pageIndex, pageSize);
-    }
-
-
-    /// <summary>
     /// Adds and removes mappings for a single tag, leaving all other tags intact.
     /// </summary>
     /// <param name="productTagId">Selected product tag identifier.</param>

@@ -188,7 +188,8 @@ public partial interface IProductService
         IList<SpecificationAttributeOption> filteredSpecOptions = null,
         ProductSortingEnum orderBy = ProductSortingEnum.Position,
         bool showHidden = false,
-        bool? overridePublished = null);
+        bool? overridePublished = null,
+        int? orderByTagId = null);
 
     /// <summary>
     /// Gets products by product attribute
